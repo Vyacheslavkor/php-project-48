@@ -2,20 +2,17 @@
 
 <?php
 
+use function Differ\getArgs;
+use function Differ\getFilePathsFromArgs;
+use function Differ\genDiff;
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$doc = <<<DOC
-Generate diff
-    
-Usage:
-    gendiff (-h|--help)
-    gendiff (-v|--version)
-    gendiff [--format <fmt>] <firstFile> <secondFile>
-    
-Options:
-    -h --help                     Show this screen
-    -v --version                  Show version
-    --format <fmt>                Report format [default: stylish]
-DOC;
+$args = getArgs();
+[$firstFile, $secondFile] = getFilePathsFromArgs($args);
 
-getInfo($doc);
+$diff = genDiff($firstFile, $secondFile);
+
+if ($diff) {
+    print_r($diff);
+}
