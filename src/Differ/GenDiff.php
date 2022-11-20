@@ -60,23 +60,11 @@ function genDiff(string $firstFile, string $secondFile): string
 function getDiffResult(array $firstFileData, array $secondFileData, array $fields): string
 {
     $result = array_reduce($fields, static function ($acc, $field) use ($firstFileData, $secondFileData) {
-        $getBoolAsString = static function ($value) {
-            if ($value === true) {
-                return 'true';
-            }
-
-            if ($value === false) {
-                return 'false';
-            }
-
-            return $value;
-        };
-
         $firstValue = isset($firstFileData[$field])
-            ? $getBoolAsString($firstFileData[$field])
+            ? convertBoolToString($firstFileData[$field])
             : null;
         $secondValue = isset($secondFileData[$field])
-            ? $getBoolAsString($secondFileData[$field])
+            ? convertBoolToString($secondFileData[$field])
             : null;
 
         if (array_key_exists($field, $firstFileData) && array_key_exists($field, $secondFileData)) {
@@ -129,4 +117,22 @@ function getAsArray(string $filePath): array
     }
 
     return json_decode($json, true);
+}
+
+/**
+ * @param mixed $value
+ *
+ * @return string
+ */
+function convertBoolToString($value): string
+{
+    if ($value === true) {
+        return 'true';
+    }
+
+    if ($value === false) {
+        return 'false';
+    }
+
+    return $value;
 }
