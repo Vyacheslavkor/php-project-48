@@ -8,20 +8,16 @@ use  function Differ\genDiff;
 
 class GenDiffTest extends TestCase
 {
+    public function getFixtureFullPath($fixtureName)
+    {
+        $parts = [__DIR__, 'fixtures', $fixtureName];
+        return realpath(implode('/', $parts));
+    }
+
     public function testDiff(): void
     {
-        $result = <<<HEDEROC
-{
-  - follow: false
-    host: hexlet.io
-  - proxy: 123.234.53.22
-  - timeout: 50
-  + timeout: 20
-  + verbose: true
-}
+        $expected = file_get_contents($this->getFixtureFullPath('diff'));
 
-HEDEROC;
-
-        $this->assertEquals($result, genDiff('files/file1.json', 'files/file2.json'));
+        $this->assertEquals($expected, genDiff('files/file1.json', 'files/file2.json'));
     }
 }
