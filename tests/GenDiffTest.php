@@ -8,10 +8,10 @@ use  function Differ\genDiff;
 
 class GenDiffTest extends TestCase
 {
-    public function getFixtureFullPath($fixtureName)
+    public function getFixtureFullPath(string $fixtureName): string
     {
         $parts = [__DIR__, 'fixtures', $fixtureName];
-        return realpath(implode('/', $parts));
+        return (string) realpath(implode('/', $parts));
     }
 
     public function testDiff(): void
