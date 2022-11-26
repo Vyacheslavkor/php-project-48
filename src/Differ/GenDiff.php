@@ -5,9 +5,14 @@ namespace Differ;
 use Docopt;
 use Docopt\Response;
 
-function getArgs(): Docopt\Response
+/**
+ * @param array<string, mixed> $params
+ *
+ * @return \Docopt\Response
+ */
+function getArgs(array $params = []): Docopt\Response
 {
-    return Docopt::handle(getDoc());
+    return Docopt::handle(getDoc(), $params);
 }
 
 function getDoc(): string
@@ -24,6 +29,7 @@ Options:
     -h --help                     Show this screen
     -v --version                  Show version
     --format <fmt>                Report format [default: stylish]
+
 DOC;
 }
 
@@ -44,6 +50,10 @@ function genDiff(string $firstFile, string $secondFile): string
 {
     $firstFileData = getAsArray($firstFile);
     $secondFileData = getAsArray($secondFile);
+
+    if (empty($firstFileData) && empty($secondFileData)) {
+        throw new \Exception('The files do not exist or are empty.');
+    }
 
     $fields = getListKeys($firstFileData, $secondFileData);
 
@@ -110,13 +120,13 @@ function getListKeys(array $firstFileData, array $secondFileData): array
  */
 function getAsArray(string $filePath): array
 {
-    $json = file_get_contents($filePath);
-
-    if (!$json) {
+    if (!file_exists($filePath)) {
         return [];
     }
 
-    return json_decode($json, true);
+    $json = file_get_contents($filePath);
+
+    return $json ? json_decode($json, true) : [];
 }
 
 /**
