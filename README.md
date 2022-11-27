@@ -6,4 +6,12 @@
 
 ### Differ:
 
+#### JSON:
 [![asciicast](https://asciinema.org/a/539035.svg)](https://asciinema.org/a/539035)
+
+#### YAML
+[![asciicast](https://asciinema.org/a/540636.svg)](https://asciinema.org/a/540636)
+
+### Installing
+
+`make install`
