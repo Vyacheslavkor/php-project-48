@@ -3,10 +3,10 @@
 namespace Differ\Tests;
 
 use Docopt\Response;
+use Exception;
 use PHPUnit\Framework\TestCase;
 
 use function Differ\genDiff;
-use function Differ\getDoc;
 use function Differ\getFilePathsFromArgs;
 use function Differ\getArgs;
 
@@ -19,19 +19,11 @@ class GenDiffTest extends TestCase
         return (string) realpath(implode('/', $parts));
     }
 
-    public function testDiff(): void
+    public function testDiffJson(): void
     {
         $expected = file_get_contents($this->getFixtureFullPath('diff'));
 
         $this->assertEquals($expected, genDiff('files/file1.json', 'files/file2.json'));
-
-        $response = new Response(['<firstFile>' => 'files/file1.json', '<secondFile>' => 'files/file2.json']);
-        $expected2 = ['files/file1.json', 'files/file2.json'];
-
-        $this->assertEquals($expected2, getFilePathsFromArgs($response));
-
-        $this->expectException(\Exception::class);
-        genDiff('files/file1.empty', 'files/file2.empty');
     }
 
     public function testDoc(): void
@@ -46,5 +38,32 @@ class GenDiffTest extends TestCase
         $args = getArgs(['exit' => false, 'exitFullUsage' => true]);
 
         $this->assertEquals($expected, $args);
+    }
+
+    public function testDiffUnknownFormat(): void
+    {
+        $this->expectException(\Exception::class);
+        genDiff('files/file.empty', 'files/file2.empty');
+    }
+
+    public function testNotExistsFile(): void
+    {
+        $this->expectException(\Exception::class);
+        genDiff('files/file4325.empty', 'files/file2345.empty');
+    }
+
+    public function testGetArgs(): void
+    {
+        $response = new Response(['<firstFile>' => 'files/file1.json', '<secondFile>' => 'files/file2.json']);
+        $expected = ['files/file1.json', 'files/file2.json'];
+
+        $this->assertEquals($expected, getFilePathsFromArgs($response));
+    }
+
+    public function testDiffYaml(): void
+    {
+        $expected = file_get_contents($this->getFixtureFullPath('diff'));
+
+        $this->assertEquals($expected, genDiff('files/file1.yaml', 'files/file2.yaml'));
     }
 }

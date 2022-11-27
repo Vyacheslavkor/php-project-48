@@ -4,6 +4,9 @@ namespace Differ;
 
 use Docopt;
 use Docopt\Response;
+use Exception;
+
+use function Parsers\parseFileData;
 
 /**
  * @param array<string, mixed> $params
@@ -17,7 +20,7 @@ function getArgs(array $params = []): Docopt\Response
 
 function getDoc(): string
 {
-    return <<<DOC
+    $doc = <<<DOC
 Generate diff
 
 Usage:
@@ -29,8 +32,9 @@ Options:
     -h --help                     Show this screen
     -v --version                  Show version
     --format <fmt>                Report format [default: stylish]
-
 DOC;
+
+    return trim($doc);
 }
 
 /**
@@ -48,12 +52,7 @@ function getFilePathsFromArgs(Response $args): array
 
 function genDiff(string $firstFile, string $secondFile): string
 {
-    $firstFileData = getAsArray($firstFile);
-    $secondFileData = getAsArray($secondFile);
-
-    if (empty($firstFileData) && empty($secondFileData)) {
-        throw new \Exception('The files do not exist or are empty.');
-    }
+    [$firstFileData, $secondFileData] = parseFileData($firstFile, $secondFile);
 
     $fields = getListKeys($firstFileData, $secondFileData);
 
@@ -111,22 +110,6 @@ function getListKeys(array $firstFileData, array $secondFileData): array
     sort($allUniqueFields);
 
     return $allUniqueFields;
-}
-
-/**
- * @param string $filePath
- *
- * @return array<string, mixed>
- */
-function getAsArray(string $filePath): array
-{
-    if (!file_exists($filePath)) {
-        return [];
-    }
-
-    $json = file_get_contents($filePath);
-
-    return $json ? json_decode($json, true) : [];
 }
 
 /**

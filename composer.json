@@ -6,7 +6,8 @@
             "Hexlet\\Code\\": "src/"
         },
         "files": [
-            "src/Differ/GenDiff.php"
+            "src/Differ/GenDiff.php",
+            "src/Parsers/functions.php"
         ]
     },
     "authors": [
@@ -21,7 +22,8 @@
     "license": "proprietary",
     "require": {
         "docopt/docopt": "^1.0",
-        "ext-json": "*"
+        "ext-json": "*",
+        "symfony/yaml": "^5.4"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.7",

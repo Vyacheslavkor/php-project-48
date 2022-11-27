@@ -11,8 +11,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $args = getArgs();
 [$firstFile, $secondFile] = getFilePathsFromArgs($args);
 
-$diff = genDiff($firstFile, $secondFile);
+try {
+    $diff = genDiff($firstFile, $secondFile);
 
-if ($diff) {
-    print_r($diff);
+    if ($diff) {
+        print_r($diff);
+    }
+} catch (\Exception $exception) {
+    print_r($exception->getMessage());
 }
+
+
+
