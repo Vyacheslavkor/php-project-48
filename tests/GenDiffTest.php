@@ -3,14 +3,13 @@
 namespace Differ\Tests;
 
 use Docopt\Response;
-use Exception;
 use PHPUnit\Framework\TestCase;
 
 use function Differ\genDiff;
 use function Differ\getFilePathsFromArgs;
 use function Differ\getArgs;
 use function Differ\getFormattedDiff;
-use function Differ\printDiff;
+use function Differ\getFormat;
 
 class GenDiffTest extends TestCase
 {
@@ -69,9 +68,22 @@ class GenDiffTest extends TestCase
         $this->assertEquals($expected, getFormattedDiff(genDiff('files/file1.yaml', 'files/file2.yaml')));
     }
 
-    public function tesUnknownDiffFormat(): void
+    public function testUnknownDiffFormat(): void
     {
         $this->expectException(\Exception::class);
         getFormattedDiff(genDiff('files/file1.json', 'files/file2.json'), 'unknown');
+    }
+
+    public function testGetFormat(): void
+    {
+        $response = new Response([
+            '--help'       => false,
+            '--version'    => false,
+            '--format'     => 'stylish',
+            '<firstFile>'  => 'files/file1.json',
+            '<secondFile>' => 'files/file2.json',
+        ], 1, '');
+
+        $this->assertEquals('stylish', getFormat($response));
     }
 }

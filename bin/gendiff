@@ -5,17 +5,21 @@
 use function Differ\getArgs;
 use function Differ\getFilePathsFromArgs;
 use function Differ\genDiff;
+use function Differ\getFormat;
+use function Differ\getFormattedDiff;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $args = getArgs();
 [$firstFile, $secondFile] = getFilePathsFromArgs($args);
+$format = getFormat($args);
 
 try {
     $diff = genDiff($firstFile, $secondFile);
 
     if ($diff) {
-        print_r($diff);
+        $format = $format ?? 'stylish';
+        print_r(getFormattedDiff($diff, $format));
     }
 } catch (\Exception $exception) {
     print_r($exception->getMessage());

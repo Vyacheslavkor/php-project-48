@@ -11,7 +11,7 @@ const YAML = 'yaml';
 /**
  * @param string $json
  *
- * @return array<string|int, mixed>
+ * @return object
  */
 function parseJson(string $json): object
 {

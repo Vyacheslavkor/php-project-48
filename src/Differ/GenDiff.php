@@ -50,6 +50,13 @@ function getFilePathsFromArgs(Response $args): array
     return [$firstFile, $secondFile];
 }
 
+/**
+ * @param string $firstFile
+ * @param string $secondFile
+ *
+ * @return array<string, mixed>
+ * @throws \Exception
+ */
 function genDiff(string $firstFile, string $secondFile): array
 {
     [$firstFileData, $secondFileData] = parseFileData($firstFile, $secondFile);
@@ -57,48 +64,49 @@ function genDiff(string $firstFile, string $secondFile): array
     return getDiffResult($firstFileData, $secondFileData);
 }
 
-function getDiffResult($first, $second): array
+/**
+ * @param object $first
+ * @param object $second
+ *
+ * @return array<string, mixed>
+ */
+function getDiffResult(object $first, object $second): array
 {
-    if (!is_array($first) || !is_array($second)) {
-        return [];
-    }
-
     $fields = getListKeys($first, $second);
 
-    $result = array_reduce($fields, static function ($acc, $field) use ($first, $second) {
-        if (!array_key_exists($field, $first) && array_key_exists($field, $second)) {
-            $acc["+ $field"] = $second[$field];
-        } elseif (array_key_exists($field, $first) && !array_key_exists($field, $second)) {
-            $acc["- $field"] = $first[$field];
-        } elseif ($first[$field] === $second[$field]) {
-            $acc[$field] = $second[$field];
+    return array_reduce($fields, static function ($acc, $field) use ($first, $second) {
+        if (!property_exists($first, $field) && property_exists($second, $field)) {
+            $acc["+ $field"] = objectToArray($second->$field);
+        } elseif (property_exists($first, $field) && !property_exists($second, $field)) {
+            $acc["- $field"] = objectToArray($first->$field);
+        } elseif ($first->$field === $second->$field) {
+            $acc[$field] = objectToArray($second->$field);
         } else {
-            if (!is_array($first[$field]) || !is_array($second[$field])) {
-                $acc["- $field"] = $first[$field];
-                $acc["+ $field"] = $second[$field];
+            if (!is_object($first->$field) || !is_object($second->$field)) {
+                $acc["- $field"] = objectToArray($first->$field);
+                $acc["+ $field"] = objectToArray($second->$field);
             }
 
-            if (is_array($first[$field]) && is_array($second[$field])) {
-                $acc[$field] = getDiffResult($first[$field], $second[$field]);
+            if (is_object($first->$field) && is_object($second->$field)) {
+                $acc[$field] = getDiffResult($first->$field, $second->$field);
             }
         }
 
         return $acc;
     }, []);
-
-    return $result;
 }
 
 /**
- * @param array<string, mixed> $firstFileData
- * @param array<string, mixed> $secondFileData
+ * @param object $firstFileData
+ * @param object $secondFileData
  *
  * @return array<int, string>
  */
-function getListKeys(array $firstFileData, array $secondFileData): array
+function getListKeys(object $firstFileData, object $secondFileData): array
 {
-    $firstKeys = array_keys($firstFileData);
-    $secondKeys = array_keys($secondFileData);
+    $firstKeys = array_keys((array) $firstFileData);
+    $secondKeys = array_keys((array) $secondFileData);
+
     $allUniqueFields = array_unique(array_merge($firstKeys, $secondKeys));
 
     sort($allUniqueFields);
@@ -120,7 +128,12 @@ function toString($value): string
     return trim(var_export($value, true), "'");
 }
 
-function stylish($diff): string
+/**
+ * @param array<string, mixed> $diff
+ *
+ * @return string
+ */
+function stylish(array $diff): string
 {
     $replacer = ' ';
     $spacesCount = 2;
@@ -135,7 +148,9 @@ function stylish($diff): string
             ? str_repeat($replacer, $indentSize)
             : str_repeat($replacer, $indentSize + $spacesCount);
         $bracketIndent = str_repeat($replacer, $indentSize - $spacesCount);
-        $getSpace = static fn ($val) => $val === '' ? '' : ' ';
+        $getSpace = static fn($val) => $val === ''
+            ? ''
+            : ' ';
 
         $lines = array_map(
             static fn($key, $val) => "{$getIndent($key)}{$key}:{$getSpace($val)}{$iter($val, $depth + 1)}",
@@ -143,30 +158,48 @@ function stylish($diff): string
             $value
         );
 
-        $result = ['{' , ...$lines, "{$bracketIndent}}"];
+        $result = ['{', ...$lines, "{$bracketIndent}}"];
 
         return implode("\n", $result);
     };
 
-    $res = $iter($diff, 1);
-
-    return $res;
+    return $iter($diff, 1);
 }
 
-function isAssoc(array $array): bool
-{
-    if (empty($array)) {
-        return false;
-    }
-
-    return array_keys($array) !== range(0, count($array) - 1);
-}
-
-function getFormattedDiff($diff, $format = 'stylish')
+/**
+ * @param array<string, mixed> $diff
+ * @param string               $format
+ *
+ * @return string
+ * @throws \Exception
+ */
+function getFormattedDiff(array $diff, string $format = 'stylish'): string
 {
     if (!function_exists("\\Differ\\{$format}") || $format !== 'stylish') {
         throw new Exception(sprintf('Unknown format: %s', $format));
     }
 
     return call_user_func("\\Differ\\{$format}", $diff);
+}
+
+/**
+ * @param string|object $object
+ *
+ * @return mixed
+ */
+function objectToArray($object)
+{
+    return is_object($object)
+        ? json_decode((string) json_encode($object), true)
+        : $object;
+}
+
+/**
+ * @param \Docopt\Response $args
+ *
+ * @return string|bool
+ */
+function getFormat(Response $args)
+{
+    return $args->offsetGet('--format');
 }
