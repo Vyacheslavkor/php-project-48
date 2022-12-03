@@ -15,11 +15,11 @@ $args = getArgs();
 $format = getFormat($args);
 
 try {
-    $diff = genDiff($firstFile, $secondFile);
+    $format = $format ?? 'stylish';
+    $diff = genDiff($firstFile, $secondFile, $format);
 
     if ($diff) {
-        $format = $format ?? 'stylish';
-        print_r(getFormattedDiff($diff, $format));
+        print_r($diff, $format);
     }
 } catch (\Exception $exception) {
     print_r($exception->getMessage());

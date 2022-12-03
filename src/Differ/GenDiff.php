@@ -53,15 +53,18 @@ function getFilePathsFromArgs(Response $args): array
 /**
  * @param string $firstFile
  * @param string $secondFile
+ * @param string $format
  *
- * @return array<string, mixed>
+ * @return string
  * @throws \Exception
  */
-function genDiff(string $firstFile, string $secondFile): array
+function genDiff(string $firstFile, string $secondFile, string $format = 'stylish'): string
 {
     [$firstFileData, $secondFileData] = parseFileData($firstFile, $secondFile);
 
-    return getDiffResult($firstFileData, $secondFileData);
+    $diff = getDiffResult($firstFileData, $secondFileData);
+
+    return getFormattedDiff($diff, $format);
 }
 
 /**
