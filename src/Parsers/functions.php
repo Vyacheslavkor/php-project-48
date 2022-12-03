@@ -13,9 +13,9 @@ const YAML = 'yaml';
  *
  * @return array<string|int, mixed>
  */
-function parseJson(string $json): array
+function parseJson(string $json): object
 {
-    return json_decode($json, true);
+    return json_decode($json);
 }
 
 /**
@@ -88,9 +88,9 @@ function getParsedFilesData(string $firstFile, string $secondFile): array
  *
  * @return array<string|int, mixed>
  */
-function parseYaml(string $yaml): array
+function parseYaml(string $yaml)
 {
-    return (array) Yaml::parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP);
+    return Yaml::parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP);
 }
 
 /**

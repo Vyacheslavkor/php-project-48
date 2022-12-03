@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use function Differ\genDiff;
 use function Differ\getFilePathsFromArgs;
 use function Differ\getArgs;
+use function Differ\getFormattedDiff;
+use function Differ\printDiff;
 
 class GenDiffTest extends TestCase
 {
@@ -23,7 +25,7 @@ class GenDiffTest extends TestCase
     {
         $expected = file_get_contents($this->getFixtureFullPath('diff'));
 
-        $this->assertEquals($expected, genDiff('files/file1.json', 'files/file2.json'));
+        $this->assertEquals($expected, getFormattedDiff(genDiff('files/file1.json', 'files/file2.json')));
     }
 
     public function testDoc(): void
@@ -40,7 +42,7 @@ class GenDiffTest extends TestCase
         $this->assertEquals($expected, $args);
     }
 
-    public function testDiffUnknownFormat(): void
+    public function testDiffUnknownFileFormat(): void
     {
         $this->expectException(\Exception::class);
         genDiff('files/file.empty', 'files/file2.empty');
@@ -64,6 +66,12 @@ class GenDiffTest extends TestCase
     {
         $expected = file_get_contents($this->getFixtureFullPath('diff'));
 
-        $this->assertEquals($expected, genDiff('files/file1.yaml', 'files/file2.yaml'));
+        $this->assertEquals($expected, getFormattedDiff(genDiff('files/file1.yaml', 'files/file2.yaml')));
+    }
+
+    public function tesUnknownDiffFormat(): void
+    {
+        $this->expectException(\Exception::class);
+        getFormattedDiff(genDiff('files/file1.json', 'files/file2.json'), 'unknown');
     }
 }

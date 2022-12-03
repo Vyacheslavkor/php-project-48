@@ -50,49 +50,43 @@ function getFilePathsFromArgs(Response $args): array
     return [$firstFile, $secondFile];
 }
 
-function genDiff(string $firstFile, string $secondFile): string
+function genDiff(string $firstFile, string $secondFile): array
 {
     [$firstFileData, $secondFileData] = parseFileData($firstFile, $secondFile);
 
-    $fields = getListKeys($firstFileData, $secondFileData);
-
-    return getDiffResult($firstFileData, $secondFileData, $fields);
+    return getDiffResult($firstFileData, $secondFileData);
 }
 
-/**
- * @param array<string, string> $firstFileData
- * @param array<string, string> $secondFileData
- * @param array<int, string>    $fields
- *
- * @return string
- */
-function getDiffResult(array $firstFileData, array $secondFileData, array $fields): string
+function getDiffResult($first, $second): array
 {
-    $result = array_reduce($fields, static function ($acc, $field) use ($firstFileData, $secondFileData) {
-        $firstValue = isset($firstFileData[$field])
-            ? convertBoolToString($firstFileData[$field])
-            : null;
-        $secondValue = isset($secondFileData[$field])
-            ? convertBoolToString($secondFileData[$field])
-            : null;
+    if (!is_array($first) || !is_array($second)) {
+        return [];
+    }
 
-        if (array_key_exists($field, $firstFileData) && array_key_exists($field, $secondFileData)) {
-            if ($firstFileData[$field] === $secondFileData[$field]) {
-                $acc = "$acc    $field: $firstValue\n";
-            } else {
-                $acc = "$acc  - $field: $firstValue\n";
-                $acc = "$acc  + $field: $secondValue\n";
-            }
-        } elseif (array_key_exists($field, $firstFileData)) {
-            $acc = "$acc  - $field: $firstValue\n";
+    $fields = getListKeys($first, $second);
+
+    $result = array_reduce($fields, static function ($acc, $field) use ($first, $second) {
+        if (!array_key_exists($field, $first) && array_key_exists($field, $second)) {
+            $acc["+ $field"] = $second[$field];
+        } elseif (array_key_exists($field, $first) && !array_key_exists($field, $second)) {
+            $acc["- $field"] = $first[$field];
+        } elseif ($first[$field] === $second[$field]) {
+            $acc[$field] = $second[$field];
         } else {
-            $acc = "$acc  + $field: $secondValue\n";
+            if (!is_array($first[$field]) || !is_array($second[$field])) {
+                $acc["- $field"] = $first[$field];
+                $acc["+ $field"] = $second[$field];
+            }
+
+            if (is_array($first[$field]) && is_array($second[$field])) {
+                $acc[$field] = getDiffResult($first[$field], $second[$field]);
+            }
         }
 
         return $acc;
-    }, '');
+    }, []);
 
-    return "{\n$result}\n";
+    return $result;
 }
 
 /**
@@ -117,15 +111,62 @@ function getListKeys(array $firstFileData, array $secondFileData): array
  *
  * @return string
  */
-function convertBoolToString($value): string
+function toString($value): string
 {
-    if ($value === true) {
-        return 'true';
+    if ($value === null) {
+        return 'null';
     }
 
-    if ($value === false) {
-        return 'false';
+    return trim(var_export($value, true), "'");
+}
+
+function stylish($diff): string
+{
+    $replacer = ' ';
+    $spacesCount = 2;
+
+    $iter = static function ($value, $depth) use (&$iter, $replacer, $spacesCount) {
+        if (!is_array($value)) {
+            return toString($value);
+        }
+
+        $indentSize = $spacesCount * $depth + $spacesCount * ($depth - 1);
+        $getIndent = static fn($val) => strpos($val, '+') === 0 || strpos($val, '-') === 0
+            ? str_repeat($replacer, $indentSize)
+            : str_repeat($replacer, $indentSize + $spacesCount);
+        $bracketIndent = str_repeat($replacer, $indentSize - $spacesCount);
+        $getSpace = static fn ($val) => $val === '' ? '' : ' ';
+
+        $lines = array_map(
+            static fn($key, $val) => "{$getIndent($key)}{$key}:{$getSpace($val)}{$iter($val, $depth + 1)}",
+            array_keys($value),
+            $value
+        );
+
+        $result = ['{' , ...$lines, "{$bracketIndent}}"];
+
+        return implode("\n", $result);
+    };
+
+    $res = $iter($diff, 1);
+
+    return $res;
+}
+
+function isAssoc(array $array): bool
+{
+    if (empty($array)) {
+        return false;
     }
 
-    return $value;
+    return array_keys($array) !== range(0, count($array) - 1);
+}
+
+function getFormattedDiff($diff, $format = 'stylish')
+{
+    if (!function_exists("\\Differ\\{$format}") || $format !== 'stylish') {
+        throw new Exception(sprintf('Unknown format: %s', $format));
+    }
+
+    return call_user_func("\\Differ\\{$format}", $diff);
 }
