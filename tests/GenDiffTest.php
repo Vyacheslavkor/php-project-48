@@ -86,4 +86,12 @@ class GenDiffTest extends TestCase
 
         $this->assertEquals('stylish', getFormat($response));
     }
+
+    public function testFlatDiff(): void
+    {
+        $expected = file_get_contents($this->getFixtureFullPath('flat_diff'));
+
+        $this->assertEquals($expected, genDiff('files/file1.json', 'files/file2.json', 'plain'));
+        $this->assertEquals($expected, genDiff('files/file1.yaml', 'files/file2.yaml', 'plain'));
+    }
 }
