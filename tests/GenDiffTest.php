@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use function Differ\genDiff;
 use function Differ\getFilePathsFromArgs;
 use function Differ\getArgs;
-use function Differ\getFormattedDiff;
 use function Differ\getFormat;
 
 class GenDiffTest extends TestCase

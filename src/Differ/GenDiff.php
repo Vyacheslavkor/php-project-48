@@ -4,9 +4,9 @@ namespace Differ;
 
 use Docopt;
 use Docopt\Response;
-use Exception;
 
 use function Parsers\parseFileData;
+use function Formatters\getFormattedDiff;
 
 /**
  * @param array<string, mixed> $params
@@ -118,75 +118,6 @@ function getListKeys(object $firstFileData, object $secondFileData): array
 }
 
 /**
- * @param mixed $value
- *
- * @return string
- */
-function toString($value): string
-{
-    if ($value === null) {
-        return 'null';
-    }
-
-    return trim(var_export($value, true), "'");
-}
-
-/**
- * @param array<string, mixed> $diff
- *
- * @return string
- */
-function stylish(array $diff): string
-{
-    $replacer = ' ';
-    $spacesCount = 2;
-
-    $iter = static function ($value, $depth) use (&$iter, $replacer, $spacesCount) {
-        if (!is_array($value)) {
-            return toString($value);
-        }
-
-        $indentSize = $spacesCount * $depth + $spacesCount * ($depth - 1);
-        $getIndent = static fn($val) => strpos($val, '+') === 0 || strpos($val, '-') === 0
-            ? str_repeat($replacer, $indentSize)
-            : str_repeat($replacer, $indentSize + $spacesCount);
-        $bracketIndent = str_repeat($replacer, $indentSize - $spacesCount);
-        $getSpace = static fn($val) => $val === ''
-            ? ''
-            : ' ';
-
-        $lines = array_map(
-            static fn($key, $val) => "{$getIndent($key)}{$key}:{$getSpace($val)}{$iter($val, $depth + 1)}",
-            array_keys($value),
-            $value
-        );
-
-        $result = ['{', ...$lines, "{$bracketIndent}}"];
-
-        return implode("\n", $result);
-    };
-
-    return $iter($diff, 1);
-}
-
-/**
- * @param array<string, mixed> $diff
- * @param string               $format
- *
- * @return string
- * @throws \Exception
- */
-function getFormattedDiff(array $diff, string $format = 'stylish'): string
-{
-    $fn = "\\Differ\\{$format}";
-    if (!is_callable($fn) || !in_array($format, ['stylish', 'plain'])) {
-        throw new Exception(sprintf('Unknown format: %s', $format));
-    }
-
-    return $fn($diff);
-}
-
-/**
  * @param string|object $object
  *
  * @return mixed
@@ -206,80 +137,4 @@ function objectToArray($object)
 function getFormat(Response $args)
 {
     return $args->offsetGet('--format');
-}
-
-/**
- * @param array<string, mixed> $diff
- *
- * @return string
- */
-function plain(array $diff): string
-{
-    $iter = static function ($currentDepthDiff, $path) use (&$iter) {
-        $keys = getKeysFromDiff($currentDepthDiff);
-
-        $lines = array_reduce($keys, static function ($acc, $key) use ($currentDepthDiff, $iter, $path) {
-            if (array_key_exists("+ {$key}", $currentDepthDiff) && !array_key_exists("- {$key}", $currentDepthDiff)) {
-                $value = getPlainValue($currentDepthDiff["+ {$key}"]);
-                $acc[] = "Property '{$path}{$key}' was added with value: {$value}";
-            }
-
-            if (array_key_exists("- {$key}", $currentDepthDiff) && !array_key_exists("+ {$key}", $currentDepthDiff)) {
-                $acc[] = "Property '{$path}{$key}' was removed";
-            }
-
-            if (array_key_exists("- {$key}", $currentDepthDiff) && array_key_exists("+ {$key}", $currentDepthDiff)) {
-                $oldValue = getPlainValue($currentDepthDiff["- {$key}"]);
-                $newValue = getPlainValue($currentDepthDiff["+ {$key}"]);
-                $acc[] = "Property '{$path}{$key}' was updated. From {$oldValue} to {$newValue}";
-            }
-
-            if (array_key_exists($key, $currentDepthDiff) && is_array($currentDepthDiff[$key])) {
-                $acc[] = $iter($currentDepthDiff[$key], "{$path}{$key}.");
-            }
-
-            return $acc;
-        }, []);
-
-        return implode("\n", $lines);
-    };
-
-    return $iter($diff, '');
-}
-
-function getFieldName(string $field): string
-{
-    if (strpos($field, '+') === 0 || strpos($field, '-') === 0) {
-        [, $fieldName] = explode(' ', $field);
-        return $fieldName;
-    }
-
-    return $field;
-}
-
-/**
- * @param array<string, mixed> $diff
- *
- * @return array<string>
- */
-function getKeysFromDiff(array $diff): array
-{
-    return array_unique(array_reduce(array_keys($diff), static function ($acc, $value) {
-        $acc[] = getFieldName($value);
-        return $acc;
-    }, []));
-}
-
-/**
- * @param mixed $value
- *
- * @return string
- */
-function getPlainValue($value): string
-{
-    if (is_string($value)) {
-        return "'{$value}'";
-    }
-
-    return is_array($value) ? '[complex value]' : toString($value);
 }
