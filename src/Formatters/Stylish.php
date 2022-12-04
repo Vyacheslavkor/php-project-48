@@ -22,12 +22,9 @@ function stylish(array $diff): string
             ? str_repeat($replacer, $indentSize)
             : str_repeat($replacer, $indentSize + $spacesCount);
         $bracketIndent = str_repeat($replacer, $indentSize - $spacesCount);
-        $getSpace = static fn($val) => $val === ''
-            ? ''
-            : ' ';
 
         $lines = array_map(
-            static fn($key, $val) => "{$getIndent($key)}{$key}:{$getSpace($val)}{$iter($val, $depth + 1)}",
+            static fn($key, $val) => "{$getIndent($key)}{$key}: {$iter($val, $depth + 1)}",
             array_keys($value),
             $value
         );
