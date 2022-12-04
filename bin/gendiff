@@ -19,7 +19,7 @@ try {
     $diff = genDiff($firstFile, $secondFile, $format);
 
     if ($diff) {
-        print_r($diff, $format);
+        print_r($diff);
     }
 } catch (\Exception $exception) {
     print_r($exception->getMessage());

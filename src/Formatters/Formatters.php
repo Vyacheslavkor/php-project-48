@@ -28,7 +28,7 @@ function toString($value): string
 function getFormattedDiff(array $diff, string $format = 'stylish'): string
 {
     $fn = __NAMESPACE__ . '\\' . $format;
-    if (!is_callable($fn) || !in_array($format, ['stylish', 'plain'])) {
+    if (!is_callable($fn) || !in_array($format, ['stylish', 'plain', 'json'])) {
         throw new Exception(sprintf('Unknown format: %s', $format));
     }
 

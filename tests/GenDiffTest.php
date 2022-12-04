@@ -93,4 +93,12 @@ class GenDiffTest extends TestCase
         $this->assertEquals($expected, genDiff('files/file1.json', 'files/file2.json', 'plain'));
         $this->assertEquals($expected, genDiff('files/file1.yaml', 'files/file2.yaml', 'plain'));
     }
+
+    public function testDiffJsonFormat(): void
+    {
+        $expected = file_get_contents($this->getFixtureFullPath('json_diff'));
+
+        $this->assertEquals($expected, genDiff('files/file1.json', 'files/file2.json', 'json'));
+        $this->assertEquals($expected, genDiff('files/file1.yaml', 'files/file2.yaml', 'json'));
+    }
 }
