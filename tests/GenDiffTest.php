@@ -5,10 +5,10 @@ namespace Differ\Tests;
 use Docopt\Response;
 use PHPUnit\Framework\TestCase;
 
-use function Differ\genDiff;
-use function Differ\getFilePathsFromArgs;
-use function Differ\getArgs;
-use function Differ\getFormat;
+use function Differ\Differ\genDiff;
+use function Differ\Differ\getFilePathsFromArgs;
+use function Differ\Differ\getArgs;
+use function Differ\Differ\getFormat;
 
 class GenDiffTest extends TestCase
 {
