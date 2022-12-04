@@ -13,26 +13,20 @@ function plain(array $diff): string
         $keys = getKeysFromDiff($currentDepthDiff);
 
         $lines = array_reduce($keys, static function ($acc, $key) use ($currentDepthDiff, $iter, $path) {
-            if (array_key_exists("+ {$key}", $currentDepthDiff) && !array_key_exists("- {$key}", $currentDepthDiff)) {
+            if (keyExists("+ {$key}", $currentDepthDiff) && !keyExists("- {$key}", $currentDepthDiff)) {
                 $value = getPlainValue($currentDepthDiff["+ {$key}"]);
-                $acc[] = "Property '{$path}{$key}' was added with value: {$value}";
-            }
-
-            if (array_key_exists("- {$key}", $currentDepthDiff) && !array_key_exists("+ {$key}", $currentDepthDiff)) {
-                $acc[] = "Property '{$path}{$key}' was removed";
-            }
-
-            if (array_key_exists("- {$key}", $currentDepthDiff) && array_key_exists("+ {$key}", $currentDepthDiff)) {
+                $diff = ["Property '{$path}{$key}' was added with value: {$value}"];
+            } elseif (keyExists("- {$key}", $currentDepthDiff) && !keyExists("+ {$key}", $currentDepthDiff)) {
+                $diff = ["Property '{$path}{$key}' was removed"];
+            } elseif (keyExists("- {$key}", $currentDepthDiff) && keyExists("+ {$key}", $currentDepthDiff)) {
                 $oldValue = getPlainValue($currentDepthDiff["- {$key}"]);
                 $newValue = getPlainValue($currentDepthDiff["+ {$key}"]);
-                $acc[] = "Property '{$path}{$key}' was updated. From {$oldValue} to {$newValue}";
+                $diff = ["Property '{$path}{$key}' was updated. From {$oldValue} to {$newValue}"];
+            } elseif (array_key_exists($key, $currentDepthDiff) && is_array($currentDepthDiff[$key])) {
+                $diff = [$iter($currentDepthDiff[$key], "{$path}{$key}.")];
             }
 
-            if (array_key_exists($key, $currentDepthDiff) && is_array($currentDepthDiff[$key])) {
-                $acc[] = $iter($currentDepthDiff[$key], "{$path}{$key}.");
-            }
-
-            return $acc;
+            return array_merge($acc, $diff ?? []);
         }, []);
 
         return implode("\n", $lines);
@@ -76,4 +70,21 @@ function getPlainValue($value): string
     }
 
     return is_array($value) ? '[complex value]' : toString($value);
+}
+
+/**
+ * @param string               $foundKey
+ * @param array<string, mixed> $array
+ *
+ * @return bool
+ */
+function keyExists(string $foundKey, array $array): bool
+{
+    foreach ($array as $key => $value) {
+        if ($key === $foundKey) {
+            return true;
+        }
+    }
+
+    return false;
 }
