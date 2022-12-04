@@ -2,8 +2,8 @@ validate:
 	composer validate
 
 lint:
-	composer exec --verbose phpcs -- --standard=PSR12 src bin tests
-	composer exec --verbose phpstan -- --level=8 --memory-limit=-1 --xdebug analyse src bin tests
+	composer exec --verbose phpcs -- --standard=PSR12 src tests
+	composer exec --verbose phpstan -- --level=8 --memory-limit=-1 --xdebug analyse src tests
 
 install:
 	composer install

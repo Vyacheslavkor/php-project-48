@@ -7,6 +7,7 @@ use Docopt\Response;
 
 use function Parsers\parseFileData;
 use function Formatters\getFormattedDiff;
+use function Functional\sort;
 
 /**
  * @param array<string, mixed> $params
@@ -79,23 +80,25 @@ function getDiffResult(object $first, object $second): array
 
     return array_reduce($fields, static function ($acc, $field) use ($first, $second) {
         if (!property_exists($first, $field) && property_exists($second, $field)) {
-            $acc["+ $field"] = objectToArray($second->$field);
+            $diff = ["+ $field" => objectToArray($second->$field)];
         } elseif (property_exists($first, $field) && !property_exists($second, $field)) {
-            $acc["- $field"] = objectToArray($first->$field);
+            $diff = ["- $field" => objectToArray($first->$field)];
         } elseif ($first->$field === $second->$field) {
-            $acc[$field] = objectToArray($second->$field);
+            $diff = [$field => objectToArray($second->$field)];
         } else {
             if (!is_object($first->$field) || !is_object($second->$field)) {
-                $acc["- $field"] = objectToArray($first->$field);
-                $acc["+ $field"] = objectToArray($second->$field);
+                $diff = [
+                    "- $field" => objectToArray($first->$field),
+                    "+ $field" => objectToArray($second->$field)
+                ];
             }
 
             if (is_object($first->$field) && is_object($second->$field)) {
-                $acc[$field] = getDiffResult($first->$field, $second->$field);
+                $diff = [$field => getDiffResult($first->$field, $second->$field)];
             }
         }
 
-        return $acc;
+        return array_merge($acc, $diff ?? []);
     }, []);
 }
 
@@ -112,9 +115,7 @@ function getListKeys(object $firstFileData, object $secondFileData): array
 
     $allUniqueFields = array_unique(array_merge($firstKeys, $secondKeys));
 
-    sort($allUniqueFields);
-
-    return $allUniqueFields;
+    return sort($allUniqueFields, fn ($left, $right) => strcmp($left, $right));
 }
 
 /**
