@@ -53,8 +53,8 @@ function getFieldName(string $field): string
 function getKeysFromDiff(array $diff): array
 {
     return array_unique(array_reduce(array_keys($diff), static function ($acc, $value) {
-        $acc[] = getFieldName($value);
-        return $acc;
+        $fieldName = getFieldName($value);
+        return array_merge($acc, [$fieldName]);
     }, []));
 }
 
@@ -80,11 +80,5 @@ function getPlainValue($value): string
  */
 function keyExists(string $foundKey, array $array): bool
 {
-    foreach ($array as $key => $value) {
-        if ($key === $foundKey) {
-            return true;
-        }
-    }
-
-    return false;
+    return array_key_exists($foundKey, $array);
 }
