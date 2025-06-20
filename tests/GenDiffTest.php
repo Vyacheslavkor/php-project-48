@@ -6,8 +6,8 @@ use Docopt\Response;
 use PHPUnit\Framework\TestCase;
 
 use function Differ\Differ\genDiff;
-use function Differ\Differ\getFilePathsFromArgs;
-use function Differ\Differ\getArgs;
+use function Differ\Differ\getFilePathsFromInput;
+use function Differ\Differ\parseInput;
 use function Differ\Differ\getFormat;
 
 class GenDiffTest extends TestCase
@@ -35,7 +35,7 @@ class GenDiffTest extends TestCase
 
         $expected = new Response([], 1, (string) $output);
 
-        $args = getArgs(['exit' => false, 'exitFullUsage' => true]);
+        $args = parseInput(['exit' => false, 'exitFullUsage' => true]);
 
         $this->assertEquals($expected, $args);
     }
@@ -52,12 +52,12 @@ class GenDiffTest extends TestCase
         genDiff('files/file4325.empty', 'files/file2345.empty');
     }
 
-    public function testGetArgs(): void
+    public function testParseInput(): void
     {
         $response = new Response(['<firstFile>' => 'files/file1.json', '<secondFile>' => 'files/file2.json']);
         $expected = ['files/file1.json', 'files/file2.json'];
 
-        $this->assertEquals($expected, getFilePathsFromArgs($response));
+        $this->assertEquals($expected, getFilePathsFromInput($response));
     }
 
     public function testDiffYaml(): void
@@ -94,7 +94,7 @@ class GenDiffTest extends TestCase
         $this->assertEquals($expected, genDiff('files/file1.yaml', 'files/file2.yaml', 'plain'));
     }
 
-    public function testDiffJsonFormat(): void
+    public function testJsonDiff(): void
     {
         $expected = file_get_contents($this->getFixtureFullPath('json_diff'));
 

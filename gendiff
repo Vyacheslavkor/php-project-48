@@ -2,16 +2,16 @@
 
 <?php
 
-use function Differ\Differ\getArgs;
-use function Differ\Differ\getFilePathsFromArgs;
+use function Differ\Differ\parseInput;
+use function Differ\Differ\getFilePathsFromInput;
 use function Differ\Differ\genDiff;
 use function Differ\Differ\getFormat;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-$args = getArgs();
-[$firstFile, $secondFile] = getFilePathsFromArgs($args);
-$format = getFormat($args);
+$input = parseInput();
+[$firstFile, $secondFile] = getFilePathsFromInput($input);
+$format = getFormat($input);
 
 try {
     $format = $format ?? 'stylish';

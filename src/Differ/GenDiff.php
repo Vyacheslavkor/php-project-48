@@ -14,7 +14,7 @@ use function Functional\sort;
  *
  * @return \Docopt\Response
  */
-function getArgs(array $params = []): Docopt\Response
+function parseInput(array $params = []): Docopt\Response
 {
     return Docopt::handle(getDoc(), $params);
 }
@@ -43,7 +43,7 @@ DOC;
  *
  * @return array<int, string>
  */
-function getFilePathsFromArgs(Response $args): array
+function getFilePathsFromInput(Response $args): array
 {
     $firstFile = $args->offsetGet('<firstFile>');
     $secondFile = $args->offsetGet('<secondFile>');
