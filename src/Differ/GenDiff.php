@@ -5,8 +5,8 @@ namespace Differ\Differ;
 use Docopt;
 use Docopt\Response;
 use Hexlet\Code\Enum\OutputFormat;
-
 use RuntimeException;
+
 use function Parsers\parseFileData;
 use function Formatters\getFormattedDiff;
 use function Functional\sort;
