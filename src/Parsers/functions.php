@@ -2,11 +2,9 @@
 
 namespace Parsers;
 
-use Exception;
+use Hexlet\Code\Enum\FileFormat;
+use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
-
-const JSON = 'json';
-const YAML = 'yaml';
 
 /**
  * @param string $json
@@ -23,12 +21,12 @@ function parseJson(string $json): object
  * @param string $secondFile
  *
  * @return array<int, mixed>
- * @throws \Exception
+ * @throws RuntimeException
  */
 function parseFileData(string $firstFile, string $secondFile): array
 {
     if (!file_exists($firstFile) || !file_exists($secondFile)) {
-        throw new Exception(sprintf('File %s or %s not exists.', $firstFile, $secondFile));
+        throw new RuntimeException(sprintf('File %s or %s not exists.', $firstFile, $secondFile));
     }
 
     [$firstParsedData, $secondParsedData] = getParsedFilesData($firstFile, $secondFile);
@@ -42,19 +40,23 @@ function parseFileData(string $firstFile, string $secondFile): array
  *
  * @return bool
  */
-function checkFileFormats(string $firstFileFormat, string $secondFileFormat): bool
+function checkFilesFormat(string $firstFileFormat, string $secondFileFormat): bool
+{
+    return isAvailableFileFormat($firstFileFormat)
+        && isAvailableFileFormat($secondFileFormat)
+        && $firstFileFormat === $secondFileFormat;
+}
+
+/**
+ * @param string $format
+ *
+ * @return bool
+ */
+function isAvailableFileFormat(string $format): bool
 {
     $supportedFormats = getSupportedFileFormats();
 
-    if (
-        !in_array($firstFileFormat, $supportedFormats, true)
-        || !in_array($secondFileFormat, $supportedFormats, true)
-    ) {
-        return false;
-    }
-
-    return ($firstFileFormat === $secondFileFormat && $firstFileFormat === JSON)
-        || ($firstFileFormat !== JSON && $secondFileFormat !== JSON);
+    return in_array($format, $supportedFormats, true);
 }
 
 /**
@@ -62,33 +64,46 @@ function checkFileFormats(string $firstFileFormat, string $secondFileFormat): bo
  * @param string $secondFile
  *
  * @return array<int, mixed>
- * @throws \Exception
+ * @throws RuntimeException
  */
 function getParsedFilesData(string $firstFile, string $secondFile): array
 {
-    $firstFileFormat = pathinfo($firstFile, PATHINFO_EXTENSION);
-    $secondFileFormat = pathinfo($secondFile, PATHINFO_EXTENSION);
+    $firstFileFormat = getFileFormat($firstFile);
+    $secondFileFormat = getFileFormat($secondFile);
 
-    if (!checkFileFormats($firstFileFormat, $secondFileFormat)) {
-        throw new Exception('Unsupported file format.');
+    if (!checkFilesFormat($firstFileFormat, $secondFileFormat)) {
+        throw new RuntimeException('Unsupported file format.');
     }
 
     $firstFileData = (string) file_get_contents($firstFile);
     $secondFileData = (string) file_get_contents($secondFile);
 
-    if ($firstFileFormat === JSON) {
-        return [parseJson($firstFileData), parseJson($secondFileData)];
-    }
+    $format = $firstFileFormat;
 
-    return [parseYaml($firstFileData), parseYaml($secondFileData)];
+    $map = [
+        FileFormat::JSON => fn() => [parseJson($firstFileData), parseJson($secondFileData)],
+        FileFormat::YAML => fn() => [parseYaml($firstFileData), parseYaml($secondFileData)],
+    ];
+
+    return $map[$format]();
+}
+
+/**
+ * @param string $file
+ *
+ * @return string
+ */
+function getFileFormat(string $file): string
+{
+    return pathinfo($file, PATHINFO_EXTENSION);
 }
 
 /**
  * @param string $yaml
  *
- * @return array<string|int, mixed>
+ * @return object
  */
-function parseYaml(string $yaml)
+function parseYaml(string $yaml): object
 {
     return Yaml::parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP);
 }
@@ -98,5 +113,5 @@ function parseYaml(string $yaml)
  */
 function getSupportedFileFormats(): array
 {
-    return [YAML, JSON];
+    return FileFormat::getAll();
 }

@@ -4,6 +4,7 @@ namespace Differ\Tests;
 
 use Docopt\Response;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 use function Differ\Differ\genDiff;
 use function Differ\Differ\getFilePathsFromInput;
@@ -42,13 +43,13 @@ class GenDiffTest extends TestCase
 
     public function testDiffUnknownFileFormat(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(RuntimeException::class);
         genDiff('files/file.empty', 'files/file2.empty');
     }
 
     public function testNotExistsFile(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(RuntimeException::class);
         genDiff('files/file4325.empty', 'files/file2345.empty');
     }
 
@@ -69,7 +70,7 @@ class GenDiffTest extends TestCase
 
     public function testUnknownDiffFormat(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(RuntimeException::class);
         genDiff('files/file1.json', 'files/file2.json', 'unknown');
     }
 

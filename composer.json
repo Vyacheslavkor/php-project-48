@@ -11,7 +11,9 @@
             "src/Formatters/Formatters.php",
             "src/Formatters/Plain.php",
             "src/Formatters/Stylish.php",
-            "src/Formatters/Json.php"
+            "src/Formatters/Json.php",
+            "src/Enum/FileFormat.php",
+            "src/Enum/OutputFormat.php"
         ]
     },
     "authors": [

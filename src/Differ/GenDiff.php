@@ -4,7 +4,9 @@ namespace Differ\Differ;
 
 use Docopt;
 use Docopt\Response;
+use Hexlet\Code\Enum\OutputFormat;
 
+use RuntimeException;
 use function Parsers\parseFileData;
 use function Formatters\getFormattedDiff;
 use function Functional\sort;
@@ -57,9 +59,9 @@ function getFilePathsFromInput(Response $args): array
  * @param string $format
  *
  * @return string
- * @throws \Exception
+ * @throws RuntimeException
  */
-function genDiff(string $firstFile, string $secondFile, string $format = 'stylish'): string
+function genDiff(string $firstFile, string $secondFile, string $format = OutputFormat::STYLISH): string
 {
     [$firstFileData, $secondFileData] = parseFileData($firstFile, $secondFile);
 
