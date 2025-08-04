@@ -2,28 +2,33 @@
 
 namespace Formatters;
 
+use Hexlet\Code\Differ\Diff;
+use stdClass;
+
 /**
- * @param array<string, mixed> $diff
+ * @param \stdClass $diff
  *
  * @return string
  */
-function plain(array $diff): string
+function plain(stdClass $diff): string
 {
     $iter = static function ($currentDepthDiff, $path) use (&$iter) {
         $keys = getKeysFromDiff($currentDepthDiff);
 
         $lines = array_reduce($keys, static function ($acc, $key) use ($currentDepthDiff, $iter, $path) {
-            if (keyExists("+ {$key}", $currentDepthDiff) && !keyExists("- {$key}", $currentDepthDiff)) {
-                $value = getPlainValue($currentDepthDiff["+ {$key}"]);
-                $diff = ["Property '{$path}{$key}' was added with value: {$value}"];
-            } elseif (keyExists("- {$key}", $currentDepthDiff) && !keyExists("+ {$key}", $currentDepthDiff)) {
-                $diff = ["Property '{$path}{$key}' was removed"];
-            } elseif (keyExists("- {$key}", $currentDepthDiff) && keyExists("+ {$key}", $currentDepthDiff)) {
-                $oldValue = getPlainValue($currentDepthDiff["- {$key}"]);
-                $newValue = getPlainValue($currentDepthDiff["+ {$key}"]);
-                $diff = ["Property '{$path}{$key}' was updated. From {$oldValue} to {$newValue}"];
-            } elseif (array_key_exists($key, $currentDepthDiff) && is_array($currentDepthDiff[$key])) {
-                $diff = [$iter($currentDepthDiff[$key], "{$path}{$key}.")];
+            if (is_object($currentDepthDiff->$key) && property_exists($currentDepthDiff->$key, 'status')) {
+                if ($currentDepthDiff->$key->status === Diff::ADDED) {
+                    $value = getPlainValue($currentDepthDiff->$key->newValue);
+                    $diff = ["Property '{$path}{$key}' was added with value: {$value}"];
+                } elseif ($currentDepthDiff->$key->status === Diff::REMOVED) {
+                    $diff = ["Property '{$path}{$key}' was removed"];
+                } elseif ($currentDepthDiff->$key->status === Diff::UPDATED) {
+                    $oldValue = getPlainValue($currentDepthDiff->$key->oldValue);
+                    $newValue = getPlainValue($currentDepthDiff->$key->newValue);
+                    $diff = ["Property '{$path}{$key}' was updated. From {$oldValue} to {$newValue}"];
+                } elseif ($currentDepthDiff->$key->status === Diff::NESTED) {
+                    $diff = [$iter($currentDepthDiff->$key->children, "{$path}{$key}.")];
+                }
             }
 
             return array_merge($acc, $diff ?? []);
@@ -50,12 +55,9 @@ function getFieldName(string $field): string
  *
  * @return array<string>
  */
-function getKeysFromDiff(array $diff): array
+function getKeysFromDiff(stdClass $diff): array
 {
-    return array_unique(array_reduce(array_keys($diff), static function ($acc, $value) {
-        $fieldName = getFieldName($value);
-        return array_merge($acc, [$fieldName]);
-    }, []));
+    return array_keys((array) $diff);
 }
 
 /**
@@ -69,7 +71,7 @@ function getPlainValue($value): string
         return "'{$value}'";
     }
 
-    return is_array($value) ? '[complex value]' : toString($value);
+    return is_object($value) ? '[complex value]' : toString($value);
 }
 
 /**

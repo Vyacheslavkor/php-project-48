@@ -4,8 +4,10 @@ namespace Differ\Differ;
 
 use Docopt;
 use Docopt\Response;
+use Hexlet\Code\Differ\Diff;
 use Hexlet\Code\Enum\OutputFormat;
 use RuntimeException;
+use stdClass;
 
 use function Parsers\parseFileData;
 use function Formatters\getFormattedDiff;
@@ -65,7 +67,7 @@ function genDiff(string $firstFile, string $secondFile, string $format = OutputF
 {
     [$firstFileData, $secondFileData] = parseFileData($firstFile, $secondFile);
 
-    $diff = getDiffResult($firstFileData, $secondFileData);
+    $diff = getDiff($firstFileData, $secondFileData);
 
     return getFormattedDiff($diff, $format);
 }
@@ -74,34 +76,38 @@ function genDiff(string $firstFile, string $secondFile, string $format = OutputF
  * @param object $first
  * @param object $second
  *
- * @return array<string, mixed>
+ * @return stdClass
  */
-function getDiffResult(object $first, object $second): array
+function getDiff(object $first, object $second): stdClass
 {
     $fields = getListKeys($first, $second);
 
     return array_reduce($fields, static function ($acc, $field) use ($first, $second) {
-        if (!property_exists($first, $field) && property_exists($second, $field)) {
-            $diff = ["+ $field" => objectToArray($second->$field)];
-        } elseif (property_exists($first, $field) && !property_exists($second, $field)) {
-            $diff = ["- $field" => objectToArray($first->$field)];
-        } elseif ($first->$field === $second->$field) {
-            $diff = [$field => objectToArray($second->$field)];
-        } else {
-            if (!is_object($first->$field) || !is_object($second->$field)) {
-                $diff = [
-                    "- $field" => objectToArray($first->$field),
-                    "+ $field" => objectToArray($second->$field)
-                ];
-            }
+        $diffNode = new stdClass();
 
-            if (is_object($first->$field) && is_object($second->$field)) {
-                $diff = [$field => getDiffResult($first->$field, $second->$field)];
-            }
+        if (!property_exists($first, $field)) {
+            $diffNode->status = Diff::ADDED;
+            $diffNode->newValue = $second->$field;
+        } elseif (!property_exists($second, $field)) {
+            $diffNode->status = Diff::REMOVED;
+            $diffNode->oldValue = $first->$field;
+        } elseif ($first->$field === $second->$field) {
+            $diffNode->status = Diff::UNCHANGED;
+            $diffNode->oldValue = $first->$field;
+        } elseif (!is_object($first->$field) || !is_object($second->$field)) {
+            $diffNode->status = Diff::UPDATED;
+            $diffNode->oldValue = $first->$field;
+            $diffNode->newValue = $second->$field;
+        } else {
+            $diffNode->status = Diff::NESTED;
+            $diffNode->children = getDiff($first->$field, $second->$field);
         }
 
-        return array_merge($acc, $diff ?? []);
-    }, []);
+        return (object) array_merge(
+            (array) $acc,
+            [$field => $diffNode]
+        );
+    }, new stdClass());
 }
 
 /**
@@ -137,7 +143,7 @@ function objectToArray($object)
  *
  * @return string|bool
  */
-function getFormat(Response $args)
+function getFormat(Response $args): bool|string
 {
     return $args->offsetGet('--format');
 }

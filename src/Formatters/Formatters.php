@@ -4,6 +4,7 @@ namespace Formatters;
 
 use Hexlet\Code\Enum\OutputFormat;
 use RuntimeException;
+use stdClass;
 
 /**
  * @param mixed $value
@@ -20,13 +21,12 @@ function toString(mixed $value): string
 }
 
 /**
- * @param array<string, mixed> $diff
- * @param string               $format
+ * @param stdClass $diff
+ * @param string    $format
  *
  * @return string
- * @throws RuntimeException
  */
-function getFormattedDiff(array $diff, string $format = 'stylish'): string
+function getFormattedDiff(stdClass $diff, string $format = OutputFormat::STYLISH): string
 {
     $fn = __NAMESPACE__ . '\\' . $format;
     if (!is_callable($fn) || !isAvailableFormat($format)) {
