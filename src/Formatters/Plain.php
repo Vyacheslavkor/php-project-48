@@ -17,16 +17,26 @@ function plain(stdClass $diff): string
 
         $lines = array_reduce($keys, static function ($acc, $key) use ($currentDepthDiff, $iter, $path) {
             if (is_object($currentDepthDiff->$key) && property_exists($currentDepthDiff->$key, 'status')) {
-                if ($currentDepthDiff->$key->status === Diff::ADDED) {
+                if (
+                    $currentDepthDiff->$key->status === Diff::ADDED
+                    && property_exists($currentDepthDiff->$key, 'newValue')
+                ) {
                     $value = getPlainValue($currentDepthDiff->$key->newValue);
                     $diff = ["Property '{$path}{$key}' was added with value: {$value}"];
                 } elseif ($currentDepthDiff->$key->status === Diff::REMOVED) {
                     $diff = ["Property '{$path}{$key}' was removed"];
-                } elseif ($currentDepthDiff->$key->status === Diff::UPDATED) {
+                } elseif (
+                    $currentDepthDiff->$key->status === Diff::UPDATED
+                    && property_exists($currentDepthDiff->$key, 'oldValue')
+                    && property_exists($currentDepthDiff->$key, 'newValue')
+                ) {
                     $oldValue = getPlainValue($currentDepthDiff->$key->oldValue);
                     $newValue = getPlainValue($currentDepthDiff->$key->newValue);
                     $diff = ["Property '{$path}{$key}' was updated. From {$oldValue} to {$newValue}"];
-                } elseif ($currentDepthDiff->$key->status === Diff::NESTED) {
+                } elseif (
+                    $currentDepthDiff->$key->status === Diff::NESTED
+                    && property_exists($currentDepthDiff->$key, 'children')
+                ) {
                     $diff = [$iter($currentDepthDiff->$key->children, "{$path}{$key}.")];
                 }
             }
@@ -51,7 +61,7 @@ function getFieldName(string $field): string
 }
 
 /**
- * @param array<string, mixed> $diff
+ * @param \stdClass $diff
  *
  * @return array<string>
  */
